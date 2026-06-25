@@ -5,26 +5,20 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
-  HardDrive,
-  FolderPlus,
   Trash2,
+  FolderOpen,
+  Plus,
   ChevronRight,
   ChevronDown,
   Folder,
-  FolderOpen,
-  LogOut,
-  Search,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import { useFolderTree } from "@/hooks/use-folders";
-import { useLogout } from "@/hooks/use-auth";
-import { CreateFolderDialog } from "@/components/folders/create-folder-dialog";
-import { SearchDialog } from "@/components/search/search-dialog";
-import { FileIcon } from "@/components/files/file-icon";
 import { foldersApi } from "@/lib/api";
+import { CreateFolderDialog } from "@/components/folders/create-folder-dialog";
+import { FileIcon } from "@/components/files/file-icon";
+import { useFilePreview, PreviewFile } from "@/components/files/file-preview-context";
 
 interface FolderNode {
   id: string;
@@ -33,78 +27,90 @@ interface FolderNode {
   parentId: string | null;
 }
 
-interface FileRecord {
+interface FileItem {
   id: string;
   name: string;
   mimeType: string;
+  size: number;
+  createdAt: string;
 }
 
-function FolderTreeItem({
-  folder,
-  depth = 0,
+function NavItem({
+  href,
+  icon: Icon,
+  label,
+  active,
 }: {
-  folder: FolderNode;
-  depth?: number;
+  href: string;
+  icon: React.ElementType;
+  label: string;
+  active: boolean;
 }) {
+  return (
+    <Link href={href}>
+      <div
+        className={cn(
+          "relative flex items-center gap-3 px-4 py-2 text-xs font-semibold uppercase tracking-wider cursor-pointer transition-all duration-150",
+          active
+            ? "text-primary border-l-[3px] border-primary bg-white"
+            : "text-muted-foreground hover:bg-muted ml-[3px]",
+        )}
+      >
+        <Icon className={cn("w-4 h-4 shrink-0", active ? "text-primary" : "")} />
+        {label}
+      </div>
+    </Link>
+  );
+}
+
+function FolderTreeItem({ folder, depth = 0 }: { folder: FolderNode; depth?: number }) {
   const [expanded, setExpanded] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
+  const { openPreview } = useFilePreview();
   const isActive = pathname === `/folder/${folder.id}`;
+  const indentPx = 16 + depth * 14;
 
-  const { data: files = [] } = useQuery<FileRecord[]>({
+  // Fetch files only when the folder is expanded
+  const { data: files = [] } = useQuery<FileItem[]>({
     queryKey: ["folders", folder.id, "files"],
     queryFn: () => foldersApi.getFiles(folder.id),
     enabled: expanded,
-    staleTime: 30 * 1000,
+    staleTime: 30_000,
   });
-
-  const showChevron = true;
-  const indentPx = 8 + depth * 14;
 
   return (
     <div>
       {/* Folder row */}
       <div
         className={cn(
-          "flex items-center gap-1 py-1 rounded-md cursor-pointer group text-sm transition-colors select-none",
+          "relative flex items-center gap-1.5 py-1.5 cursor-pointer text-xs transition-colors select-none group",
           isActive
-            ? "bg-primary/10 text-primary font-medium"
-            : "hover:bg-muted text-muted-foreground hover:text-foreground",
+            ? "text-primary bg-white font-semibold border-l-[3px] border-primary"
+            : "text-muted-foreground hover:bg-muted ml-[3px]",
         )}
-        style={{ paddingLeft: `${indentPx}px`, paddingRight: "6px" }}
+        style={{ paddingLeft: `${indentPx}px`, paddingRight: "8px" }}
         onClick={() => router.push(`/folder/${folder.id}`)}
       >
         {/* Expand toggle */}
         <button
-          onClick={(e) => {
-            e.stopPropagation();
-            setExpanded((v) => !v);
-          }}
-          className="p-0.5 rounded hover:bg-muted-foreground/20 transition-colors shrink-0"
+          className="p-0.5 rounded hover:bg-muted-foreground/10 shrink-0"
+          onClick={(e) => { e.stopPropagation(); setExpanded((v) => !v); }}
         >
-          {expanded ? (
-            <ChevronDown className="w-3 h-3" />
-          ) : (
-            <ChevronRight
-              className={cn(
-                "w-3 h-3",
-                !showChevron && "opacity-0 pointer-events-none",
-              )}
-            />
-          )}
+          {expanded
+            ? <ChevronDown className="w-3 h-3" />
+            : <ChevronRight className="w-3 h-3" />}
         </button>
-
-        {expanded ? (
-          <FolderOpen className="w-4 h-4 shrink-0 text-yellow-500" />
-        ) : (
-          <Folder className="w-4 h-4 shrink-0 text-yellow-500" />
-        )}
-        <span className="truncate flex-1 text-xs">{folder.name}</span>
+        {expanded
+          ? <FolderOpen className={cn("w-3.5 h-3.5 shrink-0", isActive ? "text-primary" : "text-amber-500")} />
+          : <Folder className={cn("w-3.5 h-3.5 shrink-0", isActive ? "text-primary" : "text-amber-500")} />
+        }
+        <span className="truncate flex-1">{folder.name}</span>
       </div>
 
-      {/* Children: subfolders + files */}
+      {/* Children: sub-folders + files */}
       {expanded && (
-        <div>
+        <>
           {folder.children.map((child) => (
             <FolderTreeItem key={child.id} folder={child} depth={depth + 1} />
           ))}
@@ -112,27 +118,24 @@ function FolderTreeItem({
           {files.map((file) => (
             <div
               key={file.id}
-              className="flex items-center gap-1.5 py-1 rounded-md text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-default select-none"
-              style={{ paddingLeft: `${indentPx + 22}px`, paddingRight: "6px" }}
-              title={file.name}
+              className="flex items-center gap-1.5 py-1.5 cursor-pointer text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors select-none ml-[3px]"
+              style={{ paddingLeft: `${indentPx + 20}px`, paddingRight: "8px" }}
+              onClick={() => openPreview(file as PreviewFile)}
             >
-              <FileIcon
-                mimeType={file.mimeType}
-                className="w-3.5 h-3.5 shrink-0"
-              />
+              <FileIcon mimeType={file.mimeType} className="w-3.5 h-3.5 shrink-0" />
               <span className="truncate">{file.name}</span>
             </div>
           ))}
 
-          {files.length === 0 && folder.children.length === 0 && (
-            <div
-              className="text-xs text-muted-foreground/50 py-1 italic"
-              style={{ paddingLeft: `${indentPx + 22}px` }}
+          {folder.children.length === 0 && files.length === 0 && (
+            <p
+              className="text-[10px] text-muted-foreground/40 italic py-1 ml-[3px]"
+              style={{ paddingLeft: `${indentPx + 20}px` }}
             >
               Empty
-            </div>
+            </p>
           )}
-        </div>
+        </>
       )}
     </div>
   );
@@ -140,112 +143,66 @@ function FolderTreeItem({
 
 export function Sidebar() {
   const { data: folderTree = [] } = useFolderTree();
-  const logout = useLogout();
   const pathname = usePathname();
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [createFolderOpen, setCreateFolderOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
 
   return (
     <>
-      <div className="flex flex-col h-full w-64 border-r bg-sidebar">
-        {/* Logo */}
-        <div className="flex items-center gap-3 px-4 py-4 border-b">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <HardDrive className="w-4 h-4 text-primary-foreground" />
-          </div>
-          <span className="font-bold text-foreground text-lg">CloudDrive</span>
-        </div>
-
-        {/* Actions */}
-        <div className="p-3 space-y-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full justify-start gap-2 text-muted-foreground"
-            onClick={() => setSearchOpen(true)}
+      <aside className="w-60 h-full border-r border-border bg-sidebar flex flex-col shrink-0 overflow-hidden">
+        {/* New Drive button */}
+        <div className="px-4 pt-5 pb-3 shrink-0">
+          <button
+            onClick={() => setCreateOpen(true)}
+            className="flex items-center gap-2 bg-primary text-white px-4 py-2.5 rounded text-xs font-bold w-full hover:opacity-90 transition-opacity shadow-sm"
           >
-            <Search className="w-4 h-4" />
-            Search folders...
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full justify-start gap-2 text-muted-foreground"
-            onClick={() => setCreateFolderOpen(true)}
-          >
-            <FolderPlus className="w-4 h-4" />
-            New folder
-          </Button>
+            <Plus className="w-4 h-4" />
+            New Drive
+          </button>
         </div>
 
-        <Separator />
+        {/* Nav items */}
+        <nav className="flex flex-col shrink-0">
+          <NavItem href="/drive" icon={FolderOpen} label="My Files" active={pathname === "/drive"} />
+          <NavItem href="/trash" icon={Trash2} label="Recycle Bin" active={pathname === "/trash"} />
+        </nav>
 
-        {/* My Drive nav */}
-        <div className="px-3 py-2">
-          <Link href="/drive">
-            <div
-              className={cn(
-                "flex items-center gap-2 px-2 py-1.5 rounded-md text-sm cursor-pointer transition-colors",
-                pathname === "/drive"
-                  ? "bg-primary/10 text-primary font-medium"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
-              )}
-            >
-              <HardDrive className="w-4 h-4" />
-              My Drive
-            </div>
-          </Link>
+        {/* Drives section */}
+        <div className="mx-4 h-px bg-border my-2 shrink-0" />
+        <div className="px-4 py-1 shrink-0">
+          <span className="text-[10px] font-semibold text-muted-foreground/50 uppercase tracking-widest">
+            Drives
+          </span>
         </div>
 
-        <Separator />
-
-        {/* Folder tree */}
-        <ScrollArea className="flex-1 px-3 py-2">
-          <div className="space-y-0.5">
+        <ScrollArea className="flex-1 min-h-0">
+          <div className="pb-4">
             {(folderTree as FolderNode[]).map((folder) => (
               <FolderTreeItem key={folder.id} folder={folder} />
             ))}
-            {folderTree.length === 0 && (
-              <p className="text-xs text-muted-foreground px-2 py-2">
-                No folders yet
+            {(folderTree as FolderNode[]).length === 0 && (
+              <p className="text-[11px] text-muted-foreground/40 px-4 py-2 italic">
+                No drives yet
               </p>
             )}
           </div>
         </ScrollArea>
 
-        <Separator />
-
-        {/* Bottom */}
-        <div className="p-3 space-y-1">
-          <Link href="/trash">
-            <div
-              className={cn(
-                "flex items-center gap-2 px-2 py-1.5 rounded-md text-sm cursor-pointer transition-colors",
-                pathname === "/trash"
-                  ? "bg-primary/10 text-primary font-medium"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
-              )}
-            >
-              <Trash2 className="w-4 h-4" />
-              Trash
-            </div>
-          </Link>
-
-          <button
-            onClick={logout}
-            className="flex items-center gap-2 px-2 py-1.5 rounded-md text-sm cursor-pointer text-muted-foreground hover:bg-muted hover:text-foreground w-full transition-colors"
-          >
-            <LogOut className="w-4 h-4" />
-            Sign out
-          </button>
+        {/* Storage meter */}
+        <div className="p-4 border-t border-border shrink-0">
+          <div className="flex justify-between items-center mb-1.5">
+            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Storage</span>
+            <span className="text-[10px] text-primary font-semibold">65%</span>
+          </div>
+          <div className="w-full bg-muted h-1.5 rounded-full overflow-hidden">
+            <div className="bg-primary w-[65%] h-full" />
+          </div>
+          <p className="text-[10px] text-muted-foreground mt-1">10.4 GB of 15 GB used</p>
         </div>
-      </div>
+      </aside>
 
-      <SearchDialog open={searchOpen} onOpenChange={setSearchOpen} />
       <CreateFolderDialog
-        open={createFolderOpen}
-        onOpenChange={setCreateFolderOpen}
+        open={createOpen}
+        onOpenChange={setCreateOpen}
         parentId={null}
       />
     </>

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Folder, FolderPlus, MoreVertical, Download, Pencil,
-  Trash2, Eye, ChevronRight
+  Trash2, Eye, ChevronRight, Globe, Lock, Shield
 } from "lucide-react";
 import { cn, formatBytes, formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import { FileIcon } from "@/components/files/file-icon";
 import { FilePreviewModal } from "@/components/files/file-preview-modal";
 import { RenameDialog } from "@/components/files/rename-dialog";
 import { CreateFolderDialog } from "@/components/folders/create-folder-dialog";
+import { VisibilityDialog } from "@/components/folders/visibility-dialog";
 import { UploadZone } from "@/components/upload/upload-zone";
 import { useDeleteFolder, useRenameFolder } from "@/hooks/use-folders";
 import { useDeleteFile, useRenameFile } from "@/hooks/use-files";
@@ -35,6 +36,7 @@ interface FolderRecord {
   id: string;
   name: string;
   createdAt: string;
+  visibility?: "public" | "private";
 }
 
 interface Props {
@@ -50,6 +52,7 @@ export function FileGrid({ folders, files, isLoading, currentFolderId, breadcrum
   const [previewFile, setPreviewFile] = useState<FileRecord | null>(null);
   const [renameTarget, setRenameTarget] = useState<{ type: "file" | "folder"; id: string; name: string } | null>(null);
   const [createFolderOpen, setCreateFolderOpen] = useState(false);
+  const [visibilityTarget, setVisibilityTarget] = useState<FolderRecord | null>(null);
 
   const deleteFolder = useDeleteFolder();
   const renameFolder = useRenameFolder();
@@ -134,8 +137,11 @@ export function FileGrid({ folders, files, isLoading, currentFolderId, breadcrum
                 className="group relative flex flex-col items-center gap-2 p-3 rounded-xl border bg-card hover:bg-muted/50 hover:border-primary/30 cursor-pointer transition-all"
                 onDoubleClick={() => router.push(`/folder/${folder.id}`)}
               >
-                <div className="w-10 h-10 flex items-center justify-center">
+                <div className="relative w-10 h-10 flex items-center justify-center">
                   <Folder className="w-8 h-8 text-yellow-500" />
+                  {folder.visibility === "private" && (
+                    <Lock className="w-3 h-3 text-primary absolute -bottom-0.5 -right-0.5" />
+                  )}
                 </div>
                 <span className="text-xs font-medium text-center truncate w-full text-foreground">
                   {folder.name}
@@ -162,6 +168,10 @@ export function FileGrid({ folders, files, isLoading, currentFolderId, breadcrum
                     >
                       <Pencil className="w-4 h-4" />
                       Rename
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setVisibilityTarget(folder)}>
+                      <Shield className="w-4 h-4" />
+                      Visibility
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
@@ -285,6 +295,16 @@ export function FileGrid({ folders, files, isLoading, currentFolderId, breadcrum
         onOpenChange={setCreateFolderOpen}
         parentId={currentFolderId}
       />
+
+      {visibilityTarget && (
+        <VisibilityDialog
+          open={!!visibilityTarget}
+          onOpenChange={(o) => !o && setVisibilityTarget(null)}
+          folderId={visibilityTarget.id}
+          folderName={visibilityTarget.name}
+          currentVisibility={visibilityTarget.visibility ?? "public"}
+        />
+      )}
     </div>
   );
 }

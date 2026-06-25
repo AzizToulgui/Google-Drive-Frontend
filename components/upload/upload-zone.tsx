@@ -1,9 +1,8 @@
 "use client";
 
 import { useRef, useState, useCallback } from "react";
-import { Upload, FolderUp, Loader2 } from "lucide-react";
+import { Upload, FolderUp, Loader2, CloudUpload, X, CheckCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import { useUploadFiles } from "@/hooks/use-files";
 
 interface Props {
@@ -11,13 +10,9 @@ interface Props {
   onUploadComplete?: () => void;
 }
 
-async function readAllEntries(
-  reader: FileSystemDirectoryReader,
-): Promise<FileSystemEntry[]> {
+async function readAllEntries(reader: FileSystemDirectoryReader): Promise<FileSystemEntry[]> {
   const all: FileSystemEntry[] = [];
-  const readBatch = () =>
-    new Promise<FileSystemEntry[]>((res) => reader.readEntries(res));
-  // readEntries returns max 100 at a time — keep reading until empty
+  const readBatch = () => new Promise<FileSystemEntry[]>((res) => reader.readEntries(res));
   while (true) {
     const batch = await readBatch();
     if (batch.length === 0) break;
@@ -62,8 +57,7 @@ export function UploadZone({ folderId, onUploadComplete }: Props) {
       files.forEach((f) => formData.append("files", f));
       if (folderId) formData.append("folderId", folderId);
       if (filePaths) filePaths.forEach((p) => formData.append("paths", p));
-      if (emptyFolderPaths)
-        emptyFolderPaths.forEach((p) => formData.append("emptyFolders", p));
+      if (emptyFolderPaths) emptyFolderPaths.forEach((p) => formData.append("emptyFolders", p));
       upload.mutate(formData, { onSuccess: onUploadComplete });
     },
     [folderId, upload, onUploadComplete],
@@ -73,44 +67,26 @@ export function UploadZone({ folderId, onUploadComplete }: Props) {
     async (e: React.DragEvent) => {
       e.preventDefault();
       setIsDragging(false);
-
       const items = Array.from(e.dataTransfer.items);
       const files: File[] = [];
       const filePaths: string[] = [];
       const dirPaths = new Set<string>();
-
       for (const item of items) {
         const entry = item.webkitGetAsEntry();
         if (entry) await collectEntries(entry, "", files, filePaths, dirPaths);
       }
-
-      // Folders that contain no files at all are in dirPaths but not referenced by filePaths
       const referencedDirs = new Set(
         filePaths
-          .map((p) => {
-            const parts = p.split("/");
-            return parts.length > 1 ? parts.slice(0, -1).join("/") : null;
-          })
+          .map((p) => { const parts = p.split("/"); return parts.length > 1 ? parts.slice(0, -1).join("/") : null; })
           .filter(Boolean) as string[],
       );
-      // Also collect all ancestor paths of referenced dirs
       for (const rp of [...referencedDirs]) {
         const parts = rp.split("/");
-        for (let i = 1; i <= parts.length; i++) {
-          referencedDirs.add(parts.slice(0, i).join("/"));
-        }
+        for (let i = 1; i <= parts.length; i++) referencedDirs.add(parts.slice(0, i).join("/"));
       }
-      const emptyFolderPaths = [...dirPaths].filter(
-        (d) => !referencedDirs.has(d),
-      );
-
+      const emptyFolderPaths = [...dirPaths].filter((d) => !referencedDirs.has(d));
       if (files.length === 0 && emptyFolderPaths.length === 0) return;
-
-      submitUpload(
-        files,
-        filePaths.length ? filePaths : undefined,
-        emptyFolderPaths.length ? emptyFolderPaths : undefined,
-      );
+      submitUpload(files, filePaths.length ? filePaths : undefined, emptyFolderPaths.length ? emptyFolderPaths : undefined);
     },
     [submitUpload],
   );
@@ -126,7 +102,6 @@ export function UploadZone({ folderId, onUploadComplete }: Props) {
     const files = Array.from(e.target.files ?? []);
     if (files.length === 0) return;
     const paths = files.map((f) => (f as any).webkitRelativePath || f.name);
-    // webkitdirectory can't detect empty folders — browser only gives us files
     submitUpload(files, paths);
     e.target.value = "";
   };
@@ -134,69 +109,58 @@ export function UploadZone({ folderId, onUploadComplete }: Props) {
   return (
     <div
       className={cn(
-        "relative rounded-xl border-2 border-dashed transition-all",
-        isDragging
-          ? "border-primary bg-primary/5 scale-[1.01]"
-          : "border-border hover:border-primary/50 hover:bg-muted/30",
+        "relative rounded border-2 border-dashed transition-all",
+        isDragging ? "border-primary bg-primary/5" : "border-border hover:border-primary/50 hover:bg-muted/20",
       )}
-      onDragOver={(e) => {
-        e.preventDefault();
-        setIsDragging(true);
-      }}
-      onDragLeave={(e) => {
-        e.preventDefault();
-        setIsDragging(false);
-      }}
+      onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+      onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }}
       onDrop={handleDrop}
     >
-      <div className="flex flex-col items-center justify-center py-10 px-6 text-center">
+      <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
         {upload.isPending ? (
           <>
-            <Loader2 className="w-8 h-8 text-primary animate-spin mb-3" />
-            <p className="text-sm font-medium">Uploading...</p>
+            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+              <Loader2 className="w-8 h-8 text-primary animate-spin" />
+            </div>
+            <p className="text-sm font-semibold text-foreground">Uploading...</p>
+            <p className="text-xs text-muted-foreground mt-1">Please wait</p>
+          </>
+        ) : isDragging ? (
+          <>
+            <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mb-4">
+              <Upload className="w-8 h-8 text-primary animate-bounce" />
+            </div>
+            <h2 className="text-lg font-semibold text-primary">Drop here to upload</h2>
+            <p className="text-sm text-muted-foreground mt-1">Files will be added instantly</p>
           </>
         ) : (
           <>
-            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
-              <Upload className="w-6 h-6 text-primary" />
+            <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+              <CloudUpload className="w-7 h-7 text-primary" />
             </div>
-            <p className="text-sm font-medium mb-1">
-              {isDragging
-                ? "Drop files here"
-                : "Drag & drop files or folders here"}
-            </p>
-            <p className="text-xs text-muted-foreground mb-4">
-              Supports all file types up to 100MB each.
-            </p>
+            <p className="text-sm font-semibold text-foreground mb-1">Drag &amp; drop files or folders here</p>
+            <p className="text-xs text-muted-foreground mb-4">Supports all file types up to 100 MB each</p>
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
+              <button
+                type="button"
+                className="flex items-center gap-1.5 px-3 py-1.5 border border-border rounded text-xs font-semibold text-foreground hover:bg-muted transition-colors"
                 onClick={() => fileInputRef.current?.click()}
               >
-                <Upload className="w-4 h-4 mr-1.5" />
-                Upload Files
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
+                <Upload className="w-3.5 h-3.5" /> Upload Files
+              </button>
+              <button
+                type="button"
+                className="flex items-center gap-1.5 px-3 py-1.5 border border-border rounded text-xs font-semibold text-foreground hover:bg-muted transition-colors"
                 onClick={() => folderInputRef.current?.click()}
               >
-                <FolderUp className="w-4 h-4 mr-1.5" />
-                Upload Folder
-              </Button>
+                <FolderUp className="w-3.5 h-3.5" /> Upload Folder
+              </button>
             </div>
           </>
         )}
       </div>
 
-      <input
-        ref={fileInputRef}
-        type="file"
-        multiple
-        className="hidden"
-        onChange={handleFileInput}
-      />
+      <input ref={fileInputRef} type="file" multiple className="hidden" onChange={handleFileInput} />
       <input
         ref={folderInputRef}
         type="file"

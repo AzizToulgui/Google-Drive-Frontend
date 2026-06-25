@@ -36,7 +36,10 @@ export const foldersApi = {
   create: (data: { name: string; parentId?: string }) =>
     api.post("/folders", data).then((r) => r.data),
   getTree: () => api.get("/folders/tree").then((r) => r.data),
+  getAccessibleRoots: () => api.get("/folders/accessible").then((r) => r.data),
   getById: (id: string) => api.get(`/folders/${id}`).then((r) => r.data),
+  getChildren: (id: string) => api.get(`/folders/${id}/children`).then((r) => r.data),
+  getBreadcrumbs: (id: string) => api.get(`/folders/${id}/breadcrumbs`).then((r) => r.data),
   rename: (id: string, name: string) =>
     api.patch(`/folders/${id}`, { name }).then((r) => r.data),
   delete: (id: string) => api.delete(`/folders/${id}`).then((r) => r.data),
@@ -65,4 +68,20 @@ export const filesApi = {
 // Search
 export const searchApi = {
   search: (q: string) => api.get(`/search?q=${encodeURIComponent(q)}`).then((r) => r.data),
+};
+
+// Users
+export const usersApi = {
+  getAll: () => api.get("/users").then((r) => r.data),
+};
+
+// Folder sharing / visibility
+export const folderVisibilityApi = {
+  setVisibility: (id: string, visibility: "public" | "private") =>
+    api.patch(`/folders/${id}/visibility`, { visibility }).then((r) => r.data),
+  getShares: (id: string) => api.get(`/folders/${id}/shares`).then((r) => r.data),
+  addShares: (id: string, userIds: string[]) =>
+    api.post(`/folders/${id}/shares`, { userIds }).then((r) => r.data),
+  removeShare: (id: string, sharedUserId: string) =>
+    api.delete(`/folders/${id}/shares/${sharedUserId}`).then((r) => r.data),
 };
