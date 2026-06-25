@@ -5,8 +5,15 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
-  HardDrive, FolderPlus, Trash2, ChevronRight, ChevronDown,
-  Folder, FolderOpen, LogOut, Search, FileText
+  HardDrive,
+  FolderPlus,
+  Trash2,
+  ChevronRight,
+  ChevronDown,
+  Folder,
+  FolderOpen,
+  LogOut,
+  Search,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -32,7 +39,13 @@ interface FileRecord {
   mimeType: string;
 }
 
-function FolderTreeItem({ folder, depth = 0 }: { folder: FolderNode; depth?: number }) {
+function FolderTreeItem({
+  folder,
+  depth = 0,
+}: {
+  folder: FolderNode;
+  depth?: number;
+}) {
   const [expanded, setExpanded] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
@@ -45,11 +58,7 @@ function FolderTreeItem({ folder, depth = 0 }: { folder: FolderNode; depth?: num
     staleTime: 30 * 1000,
   });
 
-  const hasChildren = folder.children.length > 0;
-  const hasContent = hasChildren || (expanded && files.length > 0);
-  // Show chevron if folder has subfolders, or if expanded and has files
-  const showChevron = hasChildren || expanded;
-
+  const showChevron = true;
   const indentPx = 8 + depth * 14;
 
   return (
@@ -60,26 +69,36 @@ function FolderTreeItem({ folder, depth = 0 }: { folder: FolderNode; depth?: num
           "flex items-center gap-1 py-1 rounded-md cursor-pointer group text-sm transition-colors select-none",
           isActive
             ? "bg-primary/10 text-primary font-medium"
-            : "hover:bg-muted text-muted-foreground hover:text-foreground"
+            : "hover:bg-muted text-muted-foreground hover:text-foreground",
         )}
         style={{ paddingLeft: `${indentPx}px`, paddingRight: "6px" }}
         onClick={() => router.push(`/folder/${folder.id}`)}
       >
         {/* Expand toggle */}
         <button
-          onClick={(e) => { e.stopPropagation(); setExpanded((v) => !v); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            setExpanded((v) => !v);
+          }}
           className="p-0.5 rounded hover:bg-muted-foreground/20 transition-colors shrink-0"
         >
-          {expanded
-            ? <ChevronDown className="w-3 h-3" />
-            : <ChevronRight className={cn("w-3 h-3", !showChevron && "opacity-0 pointer-events-none")} />
-          }
+          {expanded ? (
+            <ChevronDown className="w-3 h-3" />
+          ) : (
+            <ChevronRight
+              className={cn(
+                "w-3 h-3",
+                !showChevron && "opacity-0 pointer-events-none",
+              )}
+            />
+          )}
         </button>
 
-        {expanded
-          ? <FolderOpen className="w-4 h-4 shrink-0 text-yellow-500" />
-          : <Folder className="w-4 h-4 shrink-0 text-yellow-500" />
-        }
+        {expanded ? (
+          <FolderOpen className="w-4 h-4 shrink-0 text-yellow-500" />
+        ) : (
+          <Folder className="w-4 h-4 shrink-0 text-yellow-500" />
+        )}
         <span className="truncate flex-1 text-xs">{folder.name}</span>
       </div>
 
@@ -97,7 +116,10 @@ function FolderTreeItem({ folder, depth = 0 }: { folder: FolderNode; depth?: num
               style={{ paddingLeft: `${indentPx + 22}px`, paddingRight: "6px" }}
               title={file.name}
             >
-              <FileIcon mimeType={file.mimeType} className="w-3.5 h-3.5 shrink-0" />
+              <FileIcon
+                mimeType={file.mimeType}
+                className="w-3.5 h-3.5 shrink-0"
+              />
               <span className="truncate">{file.name}</span>
             </div>
           ))}
@@ -143,7 +165,7 @@ export function Sidebar() {
             onClick={() => setSearchOpen(true)}
           >
             <Search className="w-4 h-4" />
-            Search files...
+            Search folders...
           </Button>
 
           <Button
@@ -167,7 +189,7 @@ export function Sidebar() {
                 "flex items-center gap-2 px-2 py-1.5 rounded-md text-sm cursor-pointer transition-colors",
                 pathname === "/drive"
                   ? "bg-primary/10 text-primary font-medium"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
               )}
             >
               <HardDrive className="w-4 h-4" />
@@ -185,7 +207,9 @@ export function Sidebar() {
               <FolderTreeItem key={folder.id} folder={folder} />
             ))}
             {folderTree.length === 0 && (
-              <p className="text-xs text-muted-foreground px-2 py-2">No folders yet</p>
+              <p className="text-xs text-muted-foreground px-2 py-2">
+                No folders yet
+              </p>
             )}
           </div>
         </ScrollArea>
@@ -200,7 +224,7 @@ export function Sidebar() {
                 "flex items-center gap-2 px-2 py-1.5 rounded-md text-sm cursor-pointer transition-colors",
                 pathname === "/trash"
                   ? "bg-primary/10 text-primary font-medium"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
               )}
             >
               <Trash2 className="w-4 h-4" />
