@@ -11,7 +11,9 @@ interface Props {
   onUploadComplete?: () => void;
 }
 
-async function readAllEntries(reader: FileSystemDirectoryReader): Promise<FileSystemEntry[]> {
+async function readAllEntries(
+  reader: FileSystemDirectoryReader,
+): Promise<FileSystemEntry[]> {
   const all: FileSystemEntry[] = [];
   const readBatch = () =>
     new Promise<FileSystemEntry[]>((res) => reader.readEntries(res));
@@ -33,7 +35,7 @@ async function collectEntries(
 ): Promise<void> {
   if (entry.isFile) {
     const file = await new Promise<File>((resolve) =>
-      (entry as FileSystemFileEntry).file(resolve)
+      (entry as FileSystemFileEntry).file(resolve),
     );
     files.push(file);
     filePaths.push(parentPath ? `${parentPath}/${file.name}` : file.name);
@@ -60,10 +62,11 @@ export function UploadZone({ folderId, onUploadComplete }: Props) {
       files.forEach((f) => formData.append("files", f));
       if (folderId) formData.append("folderId", folderId);
       if (filePaths) filePaths.forEach((p) => formData.append("paths", p));
-      if (emptyFolderPaths) emptyFolderPaths.forEach((p) => formData.append("emptyFolders", p));
+      if (emptyFolderPaths)
+        emptyFolderPaths.forEach((p) => formData.append("emptyFolders", p));
       upload.mutate(formData, { onSuccess: onUploadComplete });
     },
-    [folderId, upload, onUploadComplete]
+    [folderId, upload, onUploadComplete],
   );
 
   const handleDrop = useCallback(
@@ -83,10 +86,12 @@ export function UploadZone({ folderId, onUploadComplete }: Props) {
 
       // Folders that contain no files at all are in dirPaths but not referenced by filePaths
       const referencedDirs = new Set(
-        filePaths.map((p) => {
-          const parts = p.split("/");
-          return parts.length > 1 ? parts.slice(0, -1).join("/") : null;
-        }).filter(Boolean) as string[]
+        filePaths
+          .map((p) => {
+            const parts = p.split("/");
+            return parts.length > 1 ? parts.slice(0, -1).join("/") : null;
+          })
+          .filter(Boolean) as string[],
       );
       // Also collect all ancestor paths of referenced dirs
       for (const rp of [...referencedDirs]) {
@@ -95,13 +100,19 @@ export function UploadZone({ folderId, onUploadComplete }: Props) {
           referencedDirs.add(parts.slice(0, i).join("/"));
         }
       }
-      const emptyFolderPaths = [...dirPaths].filter((d) => !referencedDirs.has(d));
+      const emptyFolderPaths = [...dirPaths].filter(
+        (d) => !referencedDirs.has(d),
+      );
 
       if (files.length === 0 && emptyFolderPaths.length === 0) return;
 
-      submitUpload(files, filePaths.length ? filePaths : undefined, emptyFolderPaths.length ? emptyFolderPaths : undefined);
+      submitUpload(
+        files,
+        filePaths.length ? filePaths : undefined,
+        emptyFolderPaths.length ? emptyFolderPaths : undefined,
+      );
     },
-    [submitUpload]
+    [submitUpload],
   );
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -126,10 +137,16 @@ export function UploadZone({ folderId, onUploadComplete }: Props) {
         "relative rounded-xl border-2 border-dashed transition-all",
         isDragging
           ? "border-primary bg-primary/5 scale-[1.01]"
-          : "border-border hover:border-primary/50 hover:bg-muted/30"
+          : "border-border hover:border-primary/50 hover:bg-muted/30",
       )}
-      onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-      onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }}
+      onDragOver={(e) => {
+        e.preventDefault();
+        setIsDragging(true);
+      }}
+      onDragLeave={(e) => {
+        e.preventDefault();
+        setIsDragging(false);
+      }}
       onDrop={handleDrop}
     >
       <div className="flex flex-col items-center justify-center py-10 px-6 text-center">
@@ -144,17 +161,27 @@ export function UploadZone({ folderId, onUploadComplete }: Props) {
               <Upload className="w-6 h-6 text-primary" />
             </div>
             <p className="text-sm font-medium mb-1">
-              {isDragging ? "Drop files here" : "Drag & drop files or folders here"}
+              {isDragging
+                ? "Drop files here"
+                : "Drag & drop files or folders here"}
             </p>
             <p className="text-xs text-muted-foreground mb-4">
-              Supports all file types up to 100MB each · Empty subfolders preserved
+              Supports all file types up to 100MB each.
             </p>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+              >
                 <Upload className="w-4 h-4 mr-1.5" />
                 Upload Files
               </Button>
-              <Button variant="outline" size="sm" onClick={() => folderInputRef.current?.click()}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => folderInputRef.current?.click()}
+              >
                 <FolderUp className="w-4 h-4 mr-1.5" />
                 Upload Folder
               </Button>
@@ -163,7 +190,13 @@ export function UploadZone({ folderId, onUploadComplete }: Props) {
         )}
       </div>
 
-      <input ref={fileInputRef} type="file" multiple className="hidden" onChange={handleFileInput} />
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        className="hidden"
+        onChange={handleFileInput}
+      />
       <input
         ref={folderInputRef}
         type="file"
