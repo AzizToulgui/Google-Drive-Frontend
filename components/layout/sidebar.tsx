@@ -50,10 +50,10 @@ function NavItem({
     <Link href={href}>
       <div
         className={cn(
-          "relative flex items-center gap-3 px-4 py-2 text-xs font-semibold uppercase tracking-wider cursor-pointer transition-all duration-150",
+          "relative flex items-center gap-3 mx-2 px-3 py-2 text-xs font-semibold uppercase tracking-wider cursor-pointer transition-all duration-150 rounded-xl",
           active
-            ? "text-primary border-l-[3px] border-primary bg-white"
-            : "text-muted-foreground hover:bg-muted ml-[3px]",
+            ? "text-primary bg-primary/10"
+            : "text-muted-foreground hover:bg-secondary/60",
         )}
       >
         <Icon className={cn("w-4 h-4 shrink-0", active ? "text-primary" : "")} />
@@ -71,7 +71,6 @@ function FolderTreeItem({ folder, depth = 0 }: { folder: FolderNode; depth?: num
   const isActive = pathname === `/folder/${folder.id}`;
   const indentPx = 16 + depth * 14;
 
-  // Fetch files only when the folder is expanded
   const { data: files = [] } = useQuery<FileItem[]>({
     queryKey: ["folders", folder.id, "files"],
     queryFn: () => foldersApi.getFiles(folder.id),
@@ -81,18 +80,16 @@ function FolderTreeItem({ folder, depth = 0 }: { folder: FolderNode; depth?: num
 
   return (
     <div>
-      {/* Folder row */}
       <div
         className={cn(
-          "relative flex items-center gap-1.5 py-1.5 cursor-pointer text-xs transition-colors select-none group",
+          "relative flex items-center gap-1.5 py-1.5 cursor-pointer text-xs transition-colors select-none group rounded-lg mx-2",
           isActive
-            ? "text-primary bg-white font-semibold border-l-[3px] border-primary"
-            : "text-muted-foreground hover:bg-muted ml-[3px]",
+            ? "text-primary bg-primary/10 font-semibold"
+            : "text-muted-foreground hover:bg-secondary/60",
         )}
         style={{ paddingLeft: `${indentPx}px`, paddingRight: "8px" }}
         onClick={() => router.push(`/folder/${folder.id}`)}
       >
-        {/* Expand toggle */}
         <button
           className="p-0.5 rounded hover:bg-muted-foreground/10 shrink-0"
           onClick={(e) => { e.stopPropagation(); setExpanded((v) => !v); }}
@@ -108,7 +105,6 @@ function FolderTreeItem({ folder, depth = 0 }: { folder: FolderNode; depth?: num
         <span className="truncate flex-1">{folder.name}</span>
       </div>
 
-      {/* Children: sub-folders + files */}
       {expanded && (
         <>
           {folder.children.map((child) => (
@@ -118,7 +114,7 @@ function FolderTreeItem({ folder, depth = 0 }: { folder: FolderNode; depth?: num
           {files.map((file) => (
             <div
               key={file.id}
-              className="flex items-center gap-1.5 py-1.5 cursor-pointer text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors select-none ml-[3px]"
+              className="flex items-center gap-1.5 py-1.5 cursor-pointer text-xs text-muted-foreground hover:bg-secondary/60 hover:text-foreground transition-colors select-none mx-2 rounded-lg"
               style={{ paddingLeft: `${indentPx + 20}px`, paddingRight: "8px" }}
               onClick={() => openPreview(file as PreviewFile)}
             >
@@ -129,7 +125,7 @@ function FolderTreeItem({ folder, depth = 0 }: { folder: FolderNode; depth?: num
 
           {folder.children.length === 0 && files.length === 0 && (
             <p
-              className="text-[10px] text-muted-foreground/40 italic py-1 ml-[3px]"
+              className="text-[10px] text-muted-foreground/40 italic py-1"
               style={{ paddingLeft: `${indentPx + 20}px` }}
             >
               Empty
@@ -148,29 +144,29 @@ export function Sidebar() {
 
   return (
     <>
-      <aside className="w-60 h-full border-r border-border bg-sidebar flex flex-col shrink-0 overflow-hidden">
-        {/* New Drive button */}
+      <aside className="w-60 h-full border-r border-sidebar-border bg-sidebar flex flex-col shrink-0 overflow-hidden">
+        {/* New Library button */}
         <div className="px-4 pt-5 pb-3 shrink-0">
           <button
             onClick={() => setCreateOpen(true)}
-            className="flex items-center gap-2 bg-primary text-white px-4 py-2.5 rounded text-xs font-bold w-full hover:opacity-90 transition-opacity shadow-sm"
+            className="flex items-center gap-2 bg-primary text-white px-4 py-2.5 rounded-xl text-xs font-bold w-full hover:bg-primary/90 transition-colors shadow-md"
           >
             <Plus className="w-4 h-4" />
-            New Drive
+            New Library
           </button>
         </div>
 
         {/* Nav items */}
-        <nav className="flex flex-col shrink-0">
-          <NavItem href="/drive" icon={FolderOpen} label="My Files" active={pathname === "/drive"} />
+        <nav className="flex flex-col shrink-0 gap-0.5 px-0">
+          <NavItem href="/library" icon={FolderOpen} label="My Files" active={pathname === "/library"} />
           <NavItem href="/trash" icon={Trash2} label="Recycle Bin" active={pathname === "/trash"} />
         </nav>
 
-        {/* Drives section */}
-        <div className="mx-4 h-px bg-border my-2 shrink-0" />
+        {/* Libraries section */}
+        <div className="mx-4 h-px bg-sidebar-border my-2 shrink-0" />
         <div className="px-4 py-1 shrink-0">
-          <span className="text-[10px] font-semibold text-muted-foreground/50 uppercase tracking-widest">
-            Drives
+          <span className="text-[9px] font-bold text-muted-foreground/60 uppercase tracking-[0.15em]">
+            Libraries
           </span>
         </div>
 
@@ -181,20 +177,20 @@ export function Sidebar() {
             ))}
             {(folderTree as FolderNode[]).length === 0 && (
               <p className="text-[11px] text-muted-foreground/40 px-4 py-2 italic">
-                No drives yet
+                No libraries yet
               </p>
             )}
           </div>
         </ScrollArea>
 
         {/* Storage meter */}
-        <div className="p-4 border-t border-border shrink-0">
+        <div className="p-4 border-t border-sidebar-border shrink-0">
           <div className="flex justify-between items-center mb-1.5">
             <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Storage</span>
             <span className="text-[10px] text-primary font-semibold">65%</span>
           </div>
-          <div className="w-full bg-muted h-1.5 rounded-full overflow-hidden">
-            <div className="bg-primary w-[65%] h-full" />
+          <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
+            <div className="bg-primary w-[65%] h-full rounded-full" />
           </div>
           <p className="text-[10px] text-muted-foreground mt-1">10.4 GB of 15 GB used</p>
         </div>

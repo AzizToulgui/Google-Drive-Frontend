@@ -75,6 +75,81 @@ export const usersApi = {
   getAll: () => api.get("/users").then((r) => r.data),
 };
 
+// Library Columns types
+export type ColumnType = 'text' | 'integer' | 'float' | 'enum';
+
+export interface LibraryColumn {
+  id: string;
+  libraryId: string;
+  name: string;
+  type: ColumnType;
+  enumOptions: string[] | null;
+  defaultValue: string | null;
+  position: number;
+  createdAt: string;
+}
+
+export interface ColumnValuesResponse {
+  columns: LibraryColumn[];
+  values: Record<string, string | null>;
+}
+
+export interface ColumnValueEntry {
+  columnId: string;
+  value: string | null;
+}
+
+export interface CreateColumnPayload {
+  name: string;
+  type: ColumnType;
+  enumOptions?: string[];
+  defaultValue?: string;
+}
+
+export interface UpdateColumnPayload {
+  name?: string;
+  type?: ColumnType;
+  enumOptions?: string[];
+  defaultValue?: string;
+  position?: number;
+}
+
+export const libraryColumnsApi = {
+  getColumns: (libraryId: string): Promise<LibraryColumn[]> =>
+    api.get(`/folders/${libraryId}/columns`).then((r) => r.data),
+
+  createColumn: (libraryId: string, data: CreateColumnPayload): Promise<LibraryColumn> =>
+    api.post(`/folders/${libraryId}/columns`, data).then((r) => r.data),
+
+  updateColumn: (
+    libraryId: string,
+    columnId: string,
+    data: UpdateColumnPayload,
+  ): Promise<LibraryColumn> =>
+    api.patch(`/folders/${libraryId}/columns/${columnId}`, data).then((r) => r.data),
+
+  deleteColumn: (libraryId: string, columnId: string): Promise<{ success: boolean }> =>
+    api.delete(`/folders/${libraryId}/columns/${columnId}`).then((r) => r.data),
+
+  getFolderColumnValues: (folderId: string): Promise<ColumnValuesResponse> =>
+    api.get(`/folders/${folderId}/column-values`).then((r) => r.data),
+
+  setFolderColumnValues: (
+    folderId: string,
+    values: ColumnValueEntry[],
+  ): Promise<{ success: boolean }> =>
+    api.put(`/folders/${folderId}/column-values`, { values }).then((r) => r.data),
+
+  getFileColumnValues: (fileId: string): Promise<ColumnValuesResponse> =>
+    api.get(`/files/${fileId}/column-values`).then((r) => r.data),
+
+  setFileColumnValues: (
+    fileId: string,
+    values: ColumnValueEntry[],
+  ): Promise<{ success: boolean }> =>
+    api.put(`/files/${fileId}/column-values`, { values }).then((r) => r.data),
+};
+
 // Folder sharing / visibility
 export const folderVisibilityApi = {
   setVisibility: (id: string, visibility: "public" | "private") =>

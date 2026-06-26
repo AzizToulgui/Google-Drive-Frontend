@@ -39,17 +39,17 @@ export function TopBar() {
 
   return (
     <>
-      <header className="h-14 bg-background border-b border-border flex justify-between items-center px-4 shrink-0 z-50">
+      <header className="h-14 bg-white border-b border-border shadow-sm flex justify-between items-center px-4 shrink-0 z-50">
         {/* Brand */}
         <div className="flex items-center gap-3 w-60 shrink-0">
           <LayoutGrid className="w-6 h-6 text-primary shrink-0" />
-          <span className="font-bold text-base text-primary tracking-tight">SharePoint Docs</span>
+          <span className="font-extrabold text-base text-foreground tracking-tight">Libraflow</span>
         </div>
 
         {/* Search */}
         <button
           onClick={() => setSearchOpen(true)}
-          className="flex items-center gap-2.5 flex-1 max-w-2xl mx-8 h-8 px-3 bg-muted border border-border rounded text-sm text-muted-foreground hover:bg-secondary transition-colors"
+          className="flex items-center gap-2.5 flex-1 max-w-2xl mx-8 h-8 px-3 bg-secondary border-0 rounded-xl text-sm text-muted-foreground hover:bg-secondary/80 transition-colors"
         >
           <Search className="w-3.5 h-3.5 shrink-0" />
           <span>Search</span>
@@ -57,20 +57,20 @@ export function TopBar() {
 
         {/* Right icons */}
         <div className="flex items-center gap-1">
-          <button className="p-2 hover:bg-muted rounded transition-colors text-muted-foreground" title="Settings">
+          <button className="p-2 hover:bg-muted rounded-xl transition-colors text-muted-foreground" title="Settings">
             <Settings className="w-5 h-5" />
           </button>
-          <button className="p-2 hover:bg-muted rounded transition-colors text-muted-foreground" title="Help">
+          <button className="p-2 hover:bg-muted rounded-xl transition-colors text-muted-foreground" title="Help">
             <HelpCircle className="w-5 h-5" />
           </button>
-          <button className="p-2 hover:bg-muted rounded transition-colors text-muted-foreground" title="Notifications">
+          <button className="p-2 hover:bg-muted rounded-xl transition-colors text-muted-foreground" title="Notifications">
             <Bell className="w-5 h-5" />
           </button>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
-                className={`ml-1 w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs hover:opacity-90 transition-opacity ${avatarBg}`}
+                className={`ml-1 w-8 h-8 rounded-xl flex items-center justify-center text-white font-bold text-xs hover:opacity-90 transition-opacity ${avatarBg}`}
                 suppressHydrationWarning
               >
                 <span suppressHydrationWarning>{initials}</span>

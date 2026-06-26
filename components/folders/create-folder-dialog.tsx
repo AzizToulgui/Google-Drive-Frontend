@@ -19,16 +19,16 @@ export function CreateFolderDialog({ open, onOpenChange, parentId, title, descri
   const create = useCreateFolder();
 
   const isDrive = parentId === null;
-  const resolvedTitle = title ?? (isDrive ? "Create a drive" : "Create a folder");
+  const resolvedTitle = title ?? (isDrive ? "Create a library" : "Create a folder");
   const resolvedDescription = description ?? (
     isDrive
-      ? "A drive is your top-level workspace. Create one drive per project or team."
-      : "A folder helps organise files within this drive."
+      ? "A library is your top-level workspace. Create one library per project or team."
+      : "A folder helps organise files within this library."
   );
   const Icon = isDrive ? HardDrive : FolderPlus;
   const placeholder = isDrive ? "e.g. Marketing, Q4 Projects…" : "e.g. Reports, Assets…";
-  const label = isDrive ? "Drive name" : "Folder name";
-  const confirmLabel = isDrive ? "Create drive" : "Create folder";
+  const label = isDrive ? "Library name" : "Folder name";
+  const confirmLabel = isDrive ? "Create library" : "Create folder";
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,11 +51,11 @@ export function CreateFolderDialog({ open, onOpenChange, parentId, title, descri
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-[2px]"
       onClick={(e) => { if (e.target === e.currentTarget) onOpenChange(false); }}
     >
-      <div className="bg-white w-[420px] rounded border border-border shadow-xl">
+      <div className="bg-white w-[420px] rounded-2xl border-0 shadow-2xl">
         {/* Header */}
         <div className="px-6 py-4 flex justify-between items-start border-b border-border">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 rounded-xl bg-accent flex items-center justify-center shrink-0">
               <Icon className="w-4 h-4 text-primary" />
             </div>
             <div>
@@ -84,14 +84,14 @@ export function CreateFolderDialog({ open, onOpenChange, parentId, title, descri
               onChange={(e) => setName(e.target.value)}
               placeholder={placeholder}
               autoFocus
-              className="w-full border border-border rounded px-3 py-2 text-sm focus:outline-none focus:border-primary focus:border-2 transition-all"
+              className="w-full border-[1.5px] border-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-primary transition-all"
             />
           </div>
 
           <div className="flex justify-end gap-2">
             <button
               type="button"
-              className="px-4 py-2 text-sm font-semibold text-primary hover:bg-muted transition-colors rounded"
+              className="px-4 py-2 text-sm font-semibold text-primary hover:bg-muted transition-colors rounded-xl"
               onClick={() => { setName(""); onOpenChange(false); }}
             >
               Cancel
@@ -99,7 +99,7 @@ export function CreateFolderDialog({ open, onOpenChange, parentId, title, descri
             <button
               type="submit"
               disabled={!name.trim() || create.isPending}
-              className="px-5 py-2 text-sm font-semibold bg-primary text-white rounded shadow-sm hover:opacity-90 transition-opacity disabled:opacity-60 flex items-center gap-2"
+              className="px-5 py-2 text-sm font-semibold bg-primary text-white rounded-xl shadow-md hover:opacity-90 transition-opacity disabled:opacity-60 flex items-center gap-2"
             >
               {create.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
               {confirmLabel}
